@@ -42,6 +42,13 @@
             75% { transform: translateX(5px) rotate(5deg); }
         }
         .shake-animation { animation: shake 0.5s ease-in-out; }
+
+        /* 淡入特效 */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fadeIn { animation: fadeIn 0.6s ease-out forwards; }
     </style>
 </head>
 <body class="bg-slate-100 min-h-screen text-slate-800 font-sans">
@@ -61,6 +68,40 @@
 
         <div class="bg-white p-6 md:p-10 rounded-b-2xl shadow-xl min-h-[500px]">
             
+            <!-- ================= Phase -1: Home (首頁) ================= -->
+            <div v-if="phase === 'home'" class="text-center py-10 step-transition animate-fadeIn">
+                <div class="text-6xl mb-6">🍔</div>
+                <h2 class="text-3xl font-bold mb-2">歡迎來到未來食物探索館</h2>
+                <h3 class="text-xl text-slate-500 italic mb-10">Welcome to the Future Food Exploration Center</h3>
+                
+                <div class="flex flex-col md:flex-row justify-center gap-6 max-w-3xl mx-auto">
+                    <!-- 開始體驗按鈕 -->
+                    <button @click="startSimulation('intro')" class="bg-green-600 text-white text-xl px-8 py-6 rounded-2xl font-bold hover:bg-green-700 transition shadow-lg flex-1 flex flex-col items-center justify-center gap-2">
+                        <span class="text-4xl">🚀</span>
+                        <span>開始體驗</span>
+                        <span class="text-sm font-normal italic">Start Experience</span>
+                    </button>
+                    
+                    <!-- 觀看結果與密碼輸入區 -->
+                    <div class="flex-1 flex flex-col gap-4">
+                        <button @click="showPasswordPrompt = !showPasswordPrompt" class="bg-slate-700 text-white text-xl px-8 py-6 rounded-2xl font-bold hover:bg-slate-600 transition shadow-lg w-full flex flex-col items-center justify-center gap-2">
+                            <span class="text-4xl">📊</span>
+                            <span>觀看投票結果</span>
+                            <span class="text-sm font-normal italic">View Results</span>
+                        </button>
+                        
+                        <div v-if="showPasswordPrompt" class="bg-slate-100 p-4 rounded-xl border-2 border-slate-200 text-left animate-fadeIn">
+                            <label class="block text-sm font-bold text-slate-700 mb-2">請輸入存取密碼 (Password):</label>
+                            <div class="flex gap-2">
+                                <input type="password" v-model="passwordInput" @keyup.enter="checkPassword" class="flex-1 rounded-lg px-3 py-2 border focus:ring-2 focus:ring-slate-500 outline-none" placeholder="Enter password...">
+                                <button @click="checkPassword" class="bg-slate-800 text-white px-4 py-2 rounded-lg font-bold hover:bg-slate-700">確認</button>
+                            </div>
+                            <p v-if="passwordError" class="text-red-500 text-xs font-bold mt-2">❌ 密碼錯誤，請重新輸入。 (Incorrect password)</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- ================= Phase 0: Intro ================= -->
             <div v-if="phase === 'intro'" class="text-center py-10 step-transition">
                 <div class="text-6xl mb-6">🌍</div>
@@ -410,7 +451,7 @@
                 </div>
                 
                 <div class="mt-8 text-center">
-                     <button @click="startSimulation('intro')" class="text-slate-500 hover:text-slate-800 underline font-bold transition">返回首頁 Return Home</button>
+                     <button @click="startSimulation('home')" class="text-slate-500 hover:text-slate-800 underline font-bold transition">返回首頁 Return Home</button>
                 </div>
             </div>
 
@@ -449,9 +490,14 @@
             },
             data() {
                 return {
-                    phase: 'intro', // intro, beyond, real, vote, results
+                    phase: 'home', // intro, beyond, real, vote, results, home
                     step: 1,
                     
+                    // 密碼與首頁狀態
+                    showPasswordPrompt: false,
+                    passwordInput: '',
+                    passwordError: false,
+
                     // BM States
                     bmIng: { pea: false, oil: false },
                     bmExtruded: false,
@@ -517,6 +563,7 @@
             },
             computed: {
                 phaseName() {
+                    if(this.phase === 'home') return '首頁 Home';
                     if(this.phase === 'intro') return '準備中 Intro';
                     if(this.phase === 'beyond') return '植物肉實驗室 Plant Lab';
                     if(this.phase === 'real') return '傳統牧場 Traditional Farm';
@@ -534,6 +581,7 @@
                 },
                 // 動態取得當前階段的單字表
                 currentVocabKey() {
+                    if (this.phase === 'home') return null;
                     if (this.phase === 'intro') return 'intro';
                     if (this.phase === 'beyond') return 'beyond_' + this.step;
                     if (this.phase === 'real') return 'real_' + this.step;
@@ -568,12 +616,26 @@
                     sfx.volume = 0.6; // 音量微調，避免太刺耳
                     sfx.play().catch(e => console.warn('瀏覽器暫時阻擋音效:', e));
                 },
+                checkPassword() {
+                    if (this.passwordInput === 'Miles') {
+                        this.passwordError = false;
+                        this.showPasswordPrompt = false;
+                        this.passwordInput = '';
+                        this.phase = 'results';
+                        this.fetchResults();
+                    } else {
+                        this.passwordError = true;
+                    }
+                },
                 startSimulation(targetPhase) {
                     this.phase = targetPhase;
                     this.step = 1;
                     this.voted = false;
                     this.feedbackText = '';
                     this.resultsData = null;
+                    this.showPasswordPrompt = false;
+                    this.passwordInput = '';
+                    this.passwordError = false;
                 },
                 growCow() {
                     if (this.rmGrowth < 100) {
