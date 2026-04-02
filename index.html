@@ -549,7 +549,25 @@
                     return this.currentVocab.every(v => v.checked);
                 }
             },
+            mounted() {
+                // 全域監聽點擊事件，針對所有按鈕與核取方塊播放統一音效
+                document.addEventListener('click', (e) => {
+                    const btn = e.target.closest('button');
+                    const isCheckbox = e.target.tagName && e.target.tagName.toLowerCase() === 'input' && e.target.type === 'checkbox';
+                    
+                    // 如果點擊的是可用按鈕，或是核取方塊，就播放音效
+                    if ((btn && !btn.disabled) || isCheckbox) {
+                        this.playSound();
+                    }
+                });
+            },
             methods: {
+                playSound() {
+                    // 使用您指定的 Pixabay Pop 音效
+                    const sfx = new Audio('https://cdn.pixabay.com/download/audio/2025/09/09/audio_3023b9bde2.mp3?filename=dragon-studio-pop-402324.mp3');
+                    sfx.volume = 0.6; // 音量微調，避免太刺耳
+                    sfx.play().catch(e => console.warn('瀏覽器暫時阻擋音效:', e));
+                },
                 startSimulation(targetPhase) {
                     this.phase = targetPhase;
                     this.step = 1;
